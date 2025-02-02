@@ -1,14 +1,31 @@
 # Import the necessary tools from Flask and others
-from flask import Flask, request, jsonify
+import json
+import os
+from flask import Flask, request
 from flask_cors import CORS
 import math
 import requests
-import json
 from collections import OrderedDict
 
-# Create a Flask app
+# Load configuration from environment variables
+NUMBERS_API_URL = os.getenv("NUMBERS_API_URL", "http://numbersapi.com")
+HOST = os.getenv("FLASK_HOST", "0.0.0.0")
+PORT = int(os.getenv("FLASK_PORT", 80))
+
+# Create Flask app
 app = Flask(__name__)
-CORS(app)  # This makes sure our API can be used by websites from other places
+CORS(app)
+
+# Custom JSON encoder to keep arrays on one line
+class CustomJSONEncoder(json.JSONEncoder):
+    def encode(self, obj):
+        if isinstance(obj, (list, tuple)):
+            if all(isinstance(x, str) for x in obj):  # Check if it's a list of strings
+                return '[' + ', '.join(f'"{x}"' for x in obj) + ']'
+        return super().encode(obj)
+
+def custom_json_dumps(obj, **kwargs):
+    return json.dumps(obj, cls=CustomJSONEncoder, **kwargs)
 
 # Function to check if a number is prime.
 def is_prime(n):
@@ -19,7 +36,7 @@ def is_prime(n):
             return False
     return True
 
-# Function to check if a number is a perfect number.
+# Function to check if number is a perfect number.
 def is_perfect(n):
     if n <= 0:
         return False
@@ -46,7 +63,7 @@ def sum_of_digits(n):
 # Function to get a fun fact from Numbers API
 def get_fun_fact(n):
     try:
-        url = f"http://numbersapi.com/{n}/math?json"
+        url = f"{NUMBERS_API_URL}/{n}/math?json"
         fact_response = requests.get(url, timeout=3)
         if fact_response.status_code == 200:
             fact_data = fact_response.json()
@@ -55,54 +72,69 @@ def get_fun_fact(n):
         return "No fun fact available."
     return "No fun fact available."
 
-# The main API route to classify our number.
+# The main API route to classify our number
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
-    # Get the number from the URL (like: /api/classify-number?number=371)
     num_param = request.args.get('number')
+    
     if num_param is None:
-        return jsonify({"error": True, "message": "Missing parameter 'number'"}), 400
+        return app.response_class(
+            response=json.dumps({
+                "number": "missing",
+                "error": True
+            }, indent=4),
+            status=400,
+            mimetype='application/json'
+        )
 
     try:
         n = int(num_param)
     except ValueError:
-        return jsonify({"number": num_param, "error": True, "message": "Invalid number format"}), 400
-    
-    # Initialize response OrderedDict first
-    response = OrderedDict([
-        ("number", n),
-        ("is_prime", is_prime(n)),
-        ("is_perfect", is_perfect(n)),
-        ("properties", []),
-        ("sum_of_digits", sum_of_digits(n)),
-        ("note", "Sum of its digits"),
-        ("fun_fact", "")
-    ])
+        return app.response_class(
+            response=json.dumps({
+                "number": num_param,
+                "error": True
+            }, indent=4),
+            status=400,
+            mimetype='application/json'
+        )
 
-    # Check if it is an Armstrong number first (to ensure order)
+    properties = []
     if is_armstrong(n):
-        response["properties"].append("armstrong")
+        properties.append("armstrong")
+    properties.append("even" if n % 2 == 0 else "odd")
 
-    # Check if number is even or odd
-    response["properties"].append("even" if n % 2 == 0 else "odd")
+    if is_armstrong(n):
+        digits = str(n)
+        power = len(digits)
+        fun_fact = f"{n} is an Armstrong number because {' + '.join(f'{d}^{power}' for d in digits)} = {n}"
+    else:
+        fun_fact = get_fun_fact(n)
 
-    # Generate Armstrong fun fact if applicable
-    if "armstrong" in response["properties"]:
-        superscript_digits = "⁰¹²³⁴⁵⁶⁷⁸⁹"  # Unicode superscripts
-        armstrong_exp = " + ".join(f"{d}{superscript_digits[len(str(n))]}" for d in str(n))
-        response["fun_fact"] = f"{n} is an Armstrong number because {armstrong_exp} = {n}"
+    # Initialize response first
+    response_str = '''{
+    "number": %d,
+    "is_prime": %s,
+    "is_perfect": %s,
+    "properties": %s,
+    "digit_sum": %d,  // sum of its digits
+    "fun_fact": "%s"
+}''' % (
+        n,
+        str(is_prime(n)).lower(),
+        str(is_perfect(n)).lower(),
+        json.dumps(properties),
+        sum_of_digits(n),
+        fun_fact
+    )
 
-    # If no Armstrong fun fact, fetch from Numbers API
-    if not response["fun_fact"]:
-        response["fun_fact"] = get_fun_fact(n)
-
-    # Return formatted JSON response
+# Return formatted JSON response
     return app.response_class(
-        response=json.dumps(response, indent=4),
+        response=response_str,
         status=200,
         mimetype='application/json'
     )
 
-# Run the app on port 80
+# Run this app on configured host and port
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=80, debug=True)
+    app.run(host=HOST, port=PORT, debug=True)

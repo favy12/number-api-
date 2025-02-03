@@ -1,13 +1,9 @@
 import json
 import os
-import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_cors import CORS
 import math
 import requests
-
-# Set up logging for debugging
-logging.basicConfig(level=logging.DEBUG)
 
 # Load configuration from environment variables
 NUMBERS_API_URL = os.getenv("NUMBERS_API_URL", "http://numbersapi.com")
@@ -58,10 +54,8 @@ def get_fun_fact(n):
         fact_response = requests.get(url, timeout=3)
         if fact_response.status_code == 200:
             fact_data = fact_response.json()
-            logging.debug(f"Fun Fact: {fact_data}")  # Log the fun fact data
             return fact_data.get("text", "No fun fact available.")
-    except Exception as e:
-        logging.error(f"Error fetching fun fact: {e}")  # Log the error if the request fails
+    except Exception:
         return "No fun fact available."
     return "No fun fact available."
 
@@ -69,22 +63,30 @@ def get_fun_fact(n):
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
     num_param = request.args.get('number')
-
+    
     if num_param is None:
-        return jsonify({
-            "number": "missing",
-            "error": True
-        }), 400
+        return app.response_class(
+            response=json.dumps({
+                "number": "missing",
+                "error": True
+            }),
+            status=400,
+            mimetype='application/json'
+        )
 
     try:
         # convert to float first, so that both integers and floats are handled
         n_val = float(num_param)
     except ValueError:
-        return jsonify({
-            "number": num_param,
-            "error": True,
-            "message": "Invalid number format"
-        }), 400
+        return app.response_class(
+            response=json.dumps({
+                "number": num_param,
+                "error": True,
+                "message": "Invalid number format"
+            }),
+            status=400,
+            mimetype='application/json'
+        )
 
     # For classification, convert the float to an integer
     n = int(n_val)
@@ -119,11 +121,12 @@ def classify_number():
         "fun_fact": fun_fact
     }
 
-    # Log the response for debugging
-    logging.debug(f"Response: {response}")
-
-    # Return response as JSON explicitly
-    return jsonify(response), 200
+    # Return response as JSON
+    return app.response_class(
+        response=json.dumps(response),
+        status=200,
+        mimetype='application/json'
+    )
 
 # Run this app on configured host and port
 if __name__ == '__main__':

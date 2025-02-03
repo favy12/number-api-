@@ -80,9 +80,9 @@ def classify_number():
     except ValueError:
         return app.response_class(
             response=json.dumps({
-                "number": num_param,
+                "number": "alphabet",
                 "error": True,
-                "message": "Invalid number format"
+                
             }),
             status=400,
             mimetype='application/json'

@@ -117,7 +117,7 @@ def classify_number():
         "is_prime": is_prime(n),
         "is_perfect": is_perfect(n),
         "properties": properties,
-        "digit_sum": sum_of_digits(n),
+        "class_sum": sum_of_digits(n),
         "fun_fact": fun_fact
     }
 

@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import math
 import requests
@@ -65,28 +65,20 @@ def classify_number():
     num_param = request.args.get('number')
     
     if num_param is None:
-        return app.response_class(
-            response=json.dumps({
-                "number": "missing",
-                "error": True
-            }),
-            status=400,
-            mimetype='application/json'
-        )
+        return jsonify({
+            "number": "missing",
+            "error": True
+        }), 400
 
     try:
         # convert to float first, so that both integers and floats are handled
         n_val = float(num_param)
     except ValueError:
-        return app.response_class(
-            response=json.dumps({
-                "number": num_param,
-                "error": True,
-                "message": "Invalid number format"
-            }),
-            status=400,
-            mimetype='application/json'
-        )
+        return jsonify({
+            "number": num_param,
+            "error": True,
+            "message": "Invalid number format"
+        }), 400
 
     # For classification, convert the float to an integer
     n = int(n_val)
@@ -122,11 +114,7 @@ def classify_number():
     }
 
     # Return response as JSON
-    return app.response_class(
-        response=json.dumps(response),
-        status=200,
-        mimetype='application/json'
-    )
+    return jsonify(response), 200
 
 # Run this app on configured host and port
 if __name__ == '__main__':

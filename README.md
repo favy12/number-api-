@@ -1,6 +1,6 @@
 # Number Classification API
 
-This is a simple Flask-based API that classifies a number by checking whether it is prime, perfect, Armstrong, even, or odd. It also provides a fun fact for the number using the Numbers API.
+This is a Flask-based API that classifies a number by checking whether it is prime, perfect, Armstrong, even, or odd. It also provides a fun fact for the number using the Numbers API.
 
 ## Features
 
@@ -75,14 +75,14 @@ Example:
 
 Request:
 
-typescript
 
+```typescript
 GET /api/classify-number?number=28
+```
+
 Response:
 
-json
-Copy
-Edit
+```json
 {
   "number": 28,
   "is_prime": false,
@@ -91,13 +91,14 @@ Edit
   "digit_sum": 10,
   "fun_fact": "28 is a perfect number because the sum of its divisors (1, 2, 4, 7, 14) equals 28."
 }
-Deployment
+```
+
+## Deployment
 This API is deployed on AWS and is publicly accessible. Make sure to update your environment variables if necessary when deploying.
 
-License
-This project is licensed under the MIT License - see the LICENSE file for details.
 
-Contributing
+
+## Contributing
 Fork the repository.
 Create a new branch (feature-branch).
 Commit your changes.

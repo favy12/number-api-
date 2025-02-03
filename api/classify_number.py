@@ -69,7 +69,7 @@ def get_fun_fact(n):
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
     num_param = request.args.get('number')
-    
+
     if num_param is None:
         return jsonify({
             "number": "missing",
@@ -122,7 +122,7 @@ def classify_number():
     # Log the response for debugging
     logging.debug(f"Response: {response}")
 
-    # Return response as JSON
+    # Return response as JSON explicitly
     return jsonify(response), 200
 
 # Run this app on configured host and port

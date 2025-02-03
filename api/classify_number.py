@@ -1,16 +1,15 @@
-import json
 import os
-from flask import Flask, request
-from flask_cors import CORS
 import math
 import requests
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # Load configuration from environment variables
 NUMBERS_API_URL = os.getenv("NUMBERS_API_URL", "http://numbersapi.com")
 HOST = os.getenv("FLASK_HOST", "0.0.0.0")
 PORT = int(os.getenv("FLASK_PORT", 80))
 
-# Create Flask app
+# Create Flask app and enable CORS
 app = Flask(__name__)
 CORS(app)
 
@@ -47,7 +46,7 @@ def is_armstrong(n):
 def sum_of_digits(n):
     return sum(int(digit) for digit in str(abs(n)))
 
-# Function to get a fun fact from Numbers API
+# Function to get a fun fact from Numbers API.
 def get_fun_fact(n):
     try:
         url = f"{NUMBERS_API_URL}/{n}/math?json"
@@ -55,46 +54,41 @@ def get_fun_fact(n):
         if fact_response.status_code == 200:
             fact_data = fact_response.json()
             return fact_data.get("text", "No fun fact available.")
-    except Exception:
+    except (requests.RequestException, ValueError, KeyError):
         return "No fun fact available."
     return "No fun fact available."
 
-# The main API route to classify our number
+# Default route for a welcome message.
+@app.route('/', methods=['GET'])
+def index():
+    return "Welcome to the Number Classification API! Use /api/classify-number?number=YOUR_NUMBER to classify a number."
+
+# The main API route to classify our number.
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
     num_param = request.args.get('number')
     
-    if num_param is None:
-        return app.response_class(
-            response=json.dumps({
-                "number": "missing",
-                "error": True
-            }),
-            status=400,
-            mimetype='application/json'
-        )
+    # Check for missing or empty parameter
+    if not num_param:
+        return jsonify({
+            "number": "alphabet",
+            "error": True
+        }), 400
 
     try:
-        # convert to float first, so that both integers and floats are handled
+        # Convert to float first, so that both integers and floats are handled
         n_val = float(num_param)
     except ValueError:
-        return app.response_class(
-            response=json.dumps({
-                "number": "alphabet",
-                "error": True,
-                
-            }),
-            status=400,
-            mimetype='application/json'
-        )
+        return jsonify({
+            "number": num_param,
+            "error": True,
+        }), 400
 
     # For classification, convert the float to an integer
     n = int(n_val)
 
     # Initialize properties list
     properties = []
-
-    # Check number properties
     if is_prime(n):
         properties.append("prime")
     if is_perfect(n):
@@ -103,15 +97,16 @@ def classify_number():
         properties.append("armstrong")
     properties.append("even" if n % 2 == 0 else "odd")
 
-    # Fun fact about the number
+    # Determine fun fact
     if is_armstrong(n):
         digits = str(n)
         power = len(digits)
-        fun_fact = f"{n} is an Armstrong number because {' + '.join(f'{d}^{power}' for d in digits)} = {n}"
+        # Use caret notation as specified in the requirements
+        fun_fact = f"{n} is an Armstrong number because " + " + ".join(f"{d}^{power}" for d in digits) + f" = {n}"
     else:
         fun_fact = get_fun_fact(n)
 
-    # Create response
+    # Create response object (valid JSON)
     response = {
         "number": n,
         "is_prime": is_prime(n),
@@ -121,13 +116,8 @@ def classify_number():
         "fun_fact": fun_fact
     }
 
-    # Return response as JSON
-    return app.response_class(
-        response=json.dumps(response),
-        status=200,
-        mimetype='application/json'
-    )
+    return jsonify(response), 200
 
-# Run this app on configured host and port
+# Run this app on configured host and port.
 if __name__ == '__main__':
     app.run(host=HOST, port=PORT, debug=True)

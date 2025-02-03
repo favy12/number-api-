@@ -88,16 +88,21 @@ def classify_number():
         )
 
     try:
-        n = int(num_param)
+        # Try to convert to float first, so that both integers and floats are handled
+        n_val = float(num_param)
     except ValueError:
         return app.response_class(
             response=json.dumps({
                 "number": num_param,
-                "error": True
+                "error": True,
+                "message": "Invalid number format"
             }, indent=4),
             status=400,
             mimetype='application/json'
         )
+
+    # For classification, convert the float to an integer
+    n = int(n_val)
 
     properties = []
     if is_armstrong(n):
@@ -128,7 +133,7 @@ def classify_number():
         fun_fact
     )
 
-# Return formatted JSON response
+    # Return the response with the formatted JSON
     return app.response_class(
         response=response_str,
         status=200,

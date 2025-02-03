@@ -9,7 +9,7 @@ The API is deployed on **Vercel** and uses a serverless function located at `/ap
 ## Project Structure
 
 ```
-/your-root-folder
+/root-folder
 ├── api
 │   └── classify_number.py  # Flask API code
 ├── requirements.txt        # Dependencies
@@ -67,8 +67,8 @@ requests==2.32.3
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/number-api.git
-cd number-api
+git clone https://github.com/favy12/number-api-.git
+cd number-api-
 ```
 
 ### Create and Activate a Virtual Environment
@@ -89,7 +89,7 @@ pip install -r requirements.txt
 
 ### Run the Application
 
-Since your API file is located at `/api/classify_number.py`, run:
+Since the API file is located at `/api/classify_number.py`, run:
 
 ```bash
 python api/classify_number.py
@@ -99,7 +99,7 @@ The app will run on the host and port specified in the environment variables (de
 
 ### Test the Endpoint
 
-Visit the following URL in your browser or via Postman:
+Visit the following URL in your browser :
 
 ```
 http://localhost/api/classify-number?number=371
@@ -146,7 +146,7 @@ For an invalid input (e.g., `?number=alphabet`), the API returns:
 
 ## Deployment on Vercel
 
-This project is deployed on **Vercel** without changing the existing structure. The Vercel configuration (`vercel.json`) routes requests to the Flask function.
+This project is deployed on **Vercel** with the existing structure. The Vercel configuration (`vercel.json`) routes requests to the Flask function.
 
 ### `vercel.json` Example
 
@@ -216,12 +216,6 @@ This project is deployed on **Vercel** without changing the existing structure. 
 ## Contributing
 
 Contributions are welcome! Please fork the repository, make your changes, and submit a pull request. Ensure you follow the existing code style and document your changes.
-
----
-
-## License
-
-This project is licensed under the **MIT License**. See the `LICENSE` file for details.
 
 ---
 

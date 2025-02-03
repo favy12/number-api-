@@ -14,17 +14,6 @@ PORT = int(os.getenv("FLASK_PORT", 80))
 app = Flask(__name__)
 CORS(app)
 
-# Custom JSON encoder to keep arrays on one line
-class CustomJSONEncoder(json.JSONEncoder):
-    def encode(self, obj):
-        if isinstance(obj, (list, tuple)):
-            if all(isinstance(x, str) for x in obj):  # Check if it's a list of strings
-                return '[' + ', '.join(f'"{x}"' for x in obj) + ']'
-        return super().encode(obj)
-
-def custom_json_dumps(obj, **kwargs):
-    return json.dumps(obj, cls=CustomJSONEncoder, **kwargs)
-
 # Function to check if a number is prime.
 def is_prime(n):
     if n < 2:
@@ -70,11 +59,6 @@ def get_fun_fact(n):
         return "No fun fact available."
     return "No fun fact available."
 
-# Welcome page route
-@app.route('/', methods=['GET'])
-def index():
-    return "Welcome to the Number Classification API! Use /api/classify-number?number=YOUR_NUMBER to classify a number."
-
 # The main API route to classify our number
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
@@ -85,7 +69,7 @@ def classify_number():
             response=json.dumps({
                 "number": "missing",
                 "error": True
-            }, indent=4),
+            }),
             status=400,
             mimetype='application/json'
         )
@@ -99,19 +83,27 @@ def classify_number():
                 "number": num_param,
                 "error": True,
                 "message": "Invalid number format"
-            }, indent=4),
+            }),
             status=400,
             mimetype='application/json'
         )
-    
+
     # For classification, convert the float to an integer
     n = int(n_val)
 
+    # Initialize properties list
     properties = []
+
+    # Check number properties
+    if is_prime(n):
+        properties.append("prime")
+    if is_perfect(n):
+        properties.append("perfect")
     if is_armstrong(n):
         properties.append("armstrong")
     properties.append("even" if n % 2 == 0 else "odd")
 
+    # Fun fact about the number
     if is_armstrong(n):
         digits = str(n)
         power = len(digits)
@@ -119,7 +111,7 @@ def classify_number():
     else:
         fun_fact = get_fun_fact(n)
 
-    # Prepare response in valid JSON format
+    # Create response
     response = {
         "number": n,
         "is_prime": is_prime(n),
@@ -129,9 +121,9 @@ def classify_number():
         "fun_fact": fun_fact
     }
 
-    # Return the response with the formatted JSON
+    # Return response as JSON
     return app.response_class(
-        response=json.dumps(response, indent=4),
+        response=json.dumps(response),
         status=200,
         mimetype='application/json'
     )

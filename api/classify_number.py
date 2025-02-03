@@ -1,9 +1,13 @@
 import json
 import os
+import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import math
 import requests
+
+# Set up logging for debugging
+logging.basicConfig(level=logging.DEBUG)
 
 # Load configuration from environment variables
 NUMBERS_API_URL = os.getenv("NUMBERS_API_URL", "http://numbersapi.com")
@@ -54,8 +58,10 @@ def get_fun_fact(n):
         fact_response = requests.get(url, timeout=3)
         if fact_response.status_code == 200:
             fact_data = fact_response.json()
+            logging.debug(f"Fun Fact: {fact_data}")  # Log the fun fact data
             return fact_data.get("text", "No fun fact available.")
-    except Exception:
+    except Exception as e:
+        logging.error(f"Error fetching fun fact: {e}")  # Log the error if the request fails
         return "No fun fact available."
     return "No fun fact available."
 
@@ -112,6 +118,9 @@ def classify_number():
         "digit_sum": sum_of_digits(n),
         "fun_fact": fun_fact
     }
+
+    # Log the response for debugging
+    logging.debug(f"Response: {response}")
 
     # Return response as JSON
     return jsonify(response), 200

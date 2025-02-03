@@ -1,12 +1,9 @@
-# api/classify_number.py
-
 import json
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_cors import CORS
 import math
 import requests
-from collections import OrderedDict
 
 # Load configuration from environment variables
 NUMBERS_API_URL = os.getenv("NUMBERS_API_URL", "http://numbersapi.com")
@@ -17,11 +14,11 @@ PORT = int(os.getenv("FLASK_PORT", 80))
 app = Flask(__name__)
 CORS(app)
 
-# (Optional) Custom JSON encoder if you want arrays on one line.
+# Custom JSON encoder to keep arrays on one line
 class CustomJSONEncoder(json.JSONEncoder):
     def encode(self, obj):
         if isinstance(obj, (list, tuple)):
-            if all(isinstance(x, str) for x in obj):
+            if all(isinstance(x, str) for x in obj):  # Check if it's a list of strings
                 return '[' + ', '.join(f'"{x}"' for x in obj) + ']'
         return super().encode(obj)
 
@@ -37,7 +34,7 @@ def is_prime(n):
             return False
     return True
 
-# Function to check if a number is a perfect number.
+# Function to check if number is a perfect number.
 def is_perfect(n):
     if n <= 0:
         return False
@@ -61,7 +58,7 @@ def is_armstrong(n):
 def sum_of_digits(n):
     return sum(int(digit) for digit in str(abs(n)))
 
-# Function to get a fun fact from Numbers API.
+# Function to get a fun fact from Numbers API
 def get_fun_fact(n):
     try:
         url = f"{NUMBERS_API_URL}/{n}/math?json"
@@ -73,33 +70,41 @@ def get_fun_fact(n):
         return "No fun fact available."
     return "No fun fact available."
 
-# Define a default route for the root URL.
+# Welcome page route
 @app.route('/', methods=['GET'])
 def index():
     return "Welcome to the Number Classification API! Use /api/classify-number?number=YOUR_NUMBER to classify a number."
 
-# The main API route to classify our number.
+# The main API route to classify our number
 @app.route('/api/classify-number', methods=['GET'])
 def classify_number():
     num_param = request.args.get('number')
     
     if num_param is None:
-        return jsonify({
-            "number": "missing",
-            "error": True
-        }), 400
+        return app.response_class(
+            response=json.dumps({
+                "number": "missing",
+                "error": True
+            }, indent=4),
+            status=400,
+            mimetype='application/json'
+        )
 
     try:
-        # Convert input to float to handle integers, negatives, and floats.
+        # convert to float first, so that both integers and floats are handled
         n_val = float(num_param)
     except ValueError:
-        return jsonify({
-            "number": num_param,
-            "error": True,
-            "message": "Invalid number format"
-        }), 400
-
-    # Convert the float to an integer for classification.
+        return app.response_class(
+            response=json.dumps({
+                "number": num_param,
+                "error": True,
+                "message": "Invalid number format"
+            }, indent=4),
+            status=400,
+            mimetype='application/json'
+        )
+    
+    # For classification, convert the float to an integer
     n = int(n_val)
 
     properties = []
@@ -110,13 +115,12 @@ def classify_number():
     if is_armstrong(n):
         digits = str(n)
         power = len(digits)
-        # Using the caret notation for clarity
-        fun_fact = f"{n} is an Armstrong number because " + " + ".join(f"{d}^{power}" for d in digits) + f" = {n}"
+        fun_fact = f"{n} is an Armstrong number because {' + '.join(f'{d}^{power}' for d in digits)} = {n}"
     else:
         fun_fact = get_fun_fact(n)
 
-    # Create the response dictionary.
-    response_data = {
+    # Prepare response in valid JSON format
+    response = {
         "number": n,
         "is_prime": is_prime(n),
         "is_perfect": is_perfect(n),
@@ -125,9 +129,13 @@ def classify_number():
         "fun_fact": fun_fact
     }
 
-    # Return valid JSON using Flask's jsonify.
-    return jsonify(response_data), 200
+    # Return the response with the formatted JSON
+    return app.response_class(
+        response=json.dumps(response, indent=4),
+        status=200,
+        mimetype='application/json'
+    )
 
-# Run the app on the configured host and port.
+# Run this app on configured host and port
 if __name__ == '__main__':
     app.run(host=HOST, port=PORT, debug=True)
